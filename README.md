@@ -16,7 +16,7 @@
 
 ## 直接下载使用（不用装任何东西）
 
-**→ [前往 Releases 页面下载 `替音工具.zip`](../../releases/latest)**
+**→ [前往 Releases 页面下载 `Windows.zip`](../../releases/latest)**
 
 1. 解压得到文件夹，双击里面的 **`替音工具.exe`**
 2. 把视频和音频拖进左右两个框
