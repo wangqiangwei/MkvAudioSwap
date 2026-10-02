@@ -46,7 +46,7 @@ build.bat              # 双击即可：找 ffmpeg → dotnet publish → 组装
 
 ```
 dist/替音工具/          绿色目录，双击 替音工具.exe
-dist/替音工具.zip       可直接分发的压缩包（约 45 MB）
+dist/Windows.zip        可直接分发的压缩包（约 45 MB），挂到 Release 上用
 ```
 
 `build.ps1` 的参数（`build.bat` 会原样透传）：

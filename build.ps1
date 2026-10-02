@@ -23,6 +23,30 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 
+# ────────────────────────────────────────────────────────────
+# 编码自检：所有 .ps1 必须是「UTF-8 带 BOM」
+#
+# Windows PowerShell 5.1 在 .ps1 没有 BOM 时会按 ANSI 代码页读它，
+# 中文全部变乱码，而报错信息完全指不到真正的原因 —— 只有一堆
+# "Unexpected token / Missing closing '}'"，看起来像是脚本语法写错了。
+#
+# 这个坑在开发过程中踩过三次（编辑器、格式化工具、自动化改写都可能悄悄去掉 BOM），
+# 每次都浪费时间去排查语法。所以在这里主动检查并直接修好。
+# ────────────────────────────────────────────────────────────
+foreach ($script in @('build.ps1', 'docs\生成测试素材.ps1')) {
+    $full = Join-Path $PSScriptRoot $script
+    if (-not (Test-Path $full)) { continue }
+
+    $bytes = [IO.File]::ReadAllBytes($full)
+    $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+
+    if (-not $hasBom) {
+        Write-Host ('   [修复] ' + $script + ' 缺少 UTF-8 BOM，已自动补上') -ForegroundColor Yellow
+        $text = [IO.File]::ReadAllText($full, [Text.Encoding]::UTF8)
+        [IO.File]::WriteAllText($full, $text, (New-Object Text.UTF8Encoding($true)))
+    }
+}
+
 $AppName   = '替音工具'
 $DistDir   = Join-Path $PSScriptRoot 'dist'
 $StageDir  = Join-Path $DistDir $AppName
@@ -154,7 +178,14 @@ if (-not (Test-Path $exePath)) { Fail ('没有生成 ' + $AppName + '.exe，发�
 
 # ------------------------------------------------------------
 Write-Step '5/5 打包 zip'
-$zipPath = Join-Path $DistDir ($AppName + '.zip')
+
+# zip 的名字刻意用 ASCII 的 Windows.zip，而不是跟着 AppName（替音工具.zip）：
+#   1. GitHub Release 的资产名和 README 里的下载链接要保持一致，
+#      改来改去早晚会对不上（曾经就对不上过）；
+#   2. 中文资产名在 URL 里会被百分号转义，分享和引用都不方便。
+# 用户解压后看到的仍然是 替音工具.exe —— 那只影响本地文件名，不影响下载。
+$ZipName = 'Windows.zip'
+$zipPath = Join-Path $DistDir $ZipName
 
 if ($SkipZip) {
     Write-Warn2 '按参数要求跳过打包'
