@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MkvAudioSwap.App.Dialogs.SettingsDialog"
+        Title="设置"
+        Width="540" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Microsoft YaHei UI, Segoe UI, sans-serif"
+        Background="#F5F1E8">
+
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#4A7560" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="16,9" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#3C6250" />
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#5C5449" />
+      <Setter Property="BorderBrush" Value="#E2DCCD" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="13,7" />
+      <Setter Property="FontSize" Value="12.5" />
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#F0EBE0" />
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#5C5449" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="26,24,26,22" Spacing="18">
+
+    <TextBlock Text="设置" FontSize="16" FontWeight="SemiBold" Foreground="#2E2923" />
+
+    <!-- 保存位置 -->
+    <StackPanel Spacing="8">
+      <TextBlock Text="保存位置" Classes="section" />
+      <Border Background="#FBF8F2" BorderBrush="#E2DCCD" BorderThickness="1"
+              CornerRadius="10" Padding="13,11">
+        <StackPanel Spacing="9">
+          <TextBlock Name="DirText" FontSize="12" Foreground="#2E2923" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="9">
+            <Button Name="ChangeDirButton" Classes="ghost" Content="更改…" Click="OnChangeDir" />
+            <Button Name="ResetDirButton" Classes="ghost" Content="恢复为视频所在目录"
+                    Click="OnResetDir" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+
+    <!-- 运行环境 -->
+    <StackPanel Spacing="8">
+      <TextBlock Text="运行环境" Classes="section" />
+      <Border Background="#FBF8F2" BorderBrush="#E2DCCD" BorderThickness="1"
+              CornerRadius="10" Padding="13,11">
+        <StackPanel Spacing="9">
+          <TextBlock Name="EnvText" FontSize="12" Foreground="#6F6659" TextWrapping="Wrap"
+                     Text="点下面的按钮检查 ffmpeg 是否就位。" />
+          <Button Name="CheckButton" Classes="ghost" Content="检查运行环境" Click="OnCheck" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+
+    <!-- 关于 -->
+    <StackPanel Spacing="8">
+      <TextBlock Text="关于" Classes="section" />
+      <Border Background="#FBF8F2" BorderBrush="#E2DCCD" BorderThickness="1"
+              CornerRadius="10" Padding="13,11">
+        <TextBlock FontSize="11.5" Foreground="#6F6659" TextWrapping="Wrap" LineHeight="19"
+                   Text="替音工具 — 把视频的画面原样保留、换成你自己的音频。&#x0a;全程使用 ffmpeg 的流拷贝（-c copy），视频与音频都是逐字节搬运，不经过任何重新编码。&#x0a;因此音频必须是线性 PCM（DAW 导出 CAF 或 WAV）。" />
+      </Border>
+    </StackPanel>
+
+    <Button Name="CloseButton" Classes="primary" Content="关闭" Click="OnClose"
+            HorizontalAlignment="Right" />
+  </StackPanel>
+</Window>

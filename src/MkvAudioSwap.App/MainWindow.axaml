@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:MkvAudioSwap.App"
+        xmlns:vm="clr-namespace:MkvAudioSwap.App.ViewModels"
+        x:Class="MkvAudioSwap.App.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="替音工具 — 给视频换上你自己的音频"
+        Width="880" Height="648"
+        SizeToContent="Manual"
+        CanResize="True"
+        MinWidth="760" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Microsoft YaHei UI, Segoe UI, sans-serif"
+        Background="#F5F1E8">
+
+  <Window.Resources>
+    <app:HexToBrushConverter x:Key="HexToBrush" />
+  </Window.Resources>
+
+  <Window.Styles>
+    <!-- ══════════ 文字层级 ══════════ -->
+    <Style Selector="TextBlock.body">
+      <Setter Property="Foreground" Value="#2E2923" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="#6F6659" />
+      <Setter Property="FontSize" Value="12.5" />
+    </Style>
+    <Style Selector="TextBlock.tiny">
+      <Setter Property="Foreground" Value="#6F6659" />
+      <Setter Property="FontSize" Value="11.5" />
+    </Style>
+    <Style Selector="TextBlock.faint">
+      <Setter Property="Foreground" Value="#7A7164" />
+      <Setter Property="FontSize" Value="11.5" />
+    </Style>
+    <Style Selector="TextBlock.spec">
+      <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="#5C5449" />
+    </Style>
+    <Style Selector="TextBlock.fileName">
+      <Setter Property="Foreground" Value="#2E2923" />
+      <Setter Property="FontSize" Value="14.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <!-- 时长条右侧的偏移入口：整块可点（文字 + 值 + 箭头都算命中区） -->
+    <Style Selector="Button.offsetEntry">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#6F6659" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,7" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.offsetEntry:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#EDE7DA" />
+      <Setter Property="TextElement.Foreground" Value="#2E2923" />
+    </Style>
+    <Style Selector="Button.offsetEntry.active">
+      <Setter Property="Background" Value="#E4EDE6" />
+      <Setter Property="Foreground" Value="#3F6B52" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- ══════════ 文件卡片 ══════════ -->
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#FBF8F2" />
+      <Setter Property="BorderBrush" Value="#E2DCCD" />
+      <Setter Property="BorderThickness" Value="1.4" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="20,18" />
+      <Setter Property="RenderTransform" Value="scale(1)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.18" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+          <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" />
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <!-- 悬停：极轻微抬起 + 边框加深。幅度刻意小，避免界面"跳"。 -->
+    <Style Selector="Border.card:pointerover">
+      <Setter Property="Background" Value="#FDFBF6" />
+      <Setter Property="BorderBrush" Value="#CFC6B2" />
+      <Setter Property="RenderTransform" Value="scale(1.006)" />
+      <Setter Property="BoxShadow" Value="0 3 14 0 #14000000" />
+    </Style>
+
+    <!-- 拖拽悬停：主色描边 + 米色底，这是界面上最明确的一次反馈 -->
+    <Style Selector="Border.card.dropping">
+      <Setter Property="Background" Value="#EFE9DA" />
+      <Setter Property="BorderBrush" Value="#4A7560" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="RenderTransform" Value="scale(1.012)" />
+    </Style>
+
+    <!-- 卡片里的操作按钮 -->
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#5C5449" />
+      <Setter Property="BorderBrush" Value="#D8D0BF" />
+      <Setter Property="BorderThickness" Value="1.2" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="0,9" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#F0EBE0" />
+      <Setter Property="BorderBrush" Value="#C6BCA6" />
+      <Setter Property="TextElement.Foreground" Value="#2E2923" />
+    </Style>
+
+    <!-- ══════════ 主按钮 ══════════ -->
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#4A7560" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontSize" Value="15.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="0,14" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.16" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#3C6250" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2F4A3D" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+      <Setter Property="Background" Value="#E6E1D4" />
+      <Setter Property="TextElement.Foreground" Value="#7A7164" />
+    </Style>
+
+    <!-- ══════════ 纯文字按钮 ══════════ -->
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#6F6659" />
+      <Setter Property="Padding" Value="7,3" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.link:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#EDE7DA" />
+      <Setter Property="TextElement.Foreground" Value="#2E2923" />
+    </Style>
+
+    <!-- 提醒入口：小号描边按钮，不抢主操作的注意力 -->
+    <Style Selector="Button.notice">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="#E0D6BF" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="14,5" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.notice:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#F2EDE0" />
+      <Setter Property="BorderBrush" Value="#CFC6B2" />
+    </Style>
+
+    <Style Selector="ProgressBar">
+      <Setter Property="Height" Value="5" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Foreground" Value="#4A7560" />
+      <Setter Property="Background" Value="#E4DFD2" />
+    </Style>
+  </Window.Styles>
+
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="22,16,22,20">
+
+    <!-- ══════════ 顶栏 ══════════ -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <TextBlock Text="替音" FontSize="17" FontWeight="Bold" Foreground="#2E2923"
+                   VerticalAlignment="Center" />
+        <Border Background="#E4EDE6" CornerRadius="5" Padding="7,2" VerticalAlignment="Center">
+          <TextBlock Text="不重编码" FontSize="11" Foreground="#4A7560" FontWeight="SemiBold" />
+        </Border>
+        <TextBlock Text="画面与音质零损失" Classes="tiny" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <Button Grid.Column="1" Name="SettingsButton" Classes="link" Content="设置"
+              Click="OnOpenSettings" VerticalAlignment="Center" />
+    </Grid>
+
+    <!-- ══════════ 主体：卡片（自适应伸缩）/ 时长条 / 底部操作 ══════════ -->
+    <Grid Grid.Row="1" RowDefinitions="*,Auto,Auto">
+
+      <!-- ───── 两张卡片 ───── -->
+      <Grid Grid.Row="0" ColumnDefinitions="*,16,*">
+
+        <!-- 视频卡 -->
+        <Border Grid.Column="0" Name="VideoCard" Classes="card" MinHeight="190">
+          <Grid RowDefinitions="*,Auto">
+            <StackPanel Grid.Row="0" Spacing="11" VerticalAlignment="Center">
+
+              <!-- 空状态 -->
+              <StackPanel IsVisible="{Binding Video.IsEmpty}" Spacing="8"
+                          VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="🎬" FontSize="34" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Video.EmptyTitle}" Classes="body" FontSize="14.5"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Video.EmptyHint}" Classes="tiny" HorizontalAlignment="Center" />
+                <TextBlock Text="也可以把文件拖进这个框" Classes="faint" HorizontalAlignment="Center"
+                           Margin="0,3,0,0" />
+              </StackPanel>
+
+              <!-- 已选状态 -->
+              <StackPanel IsVisible="{Binding Video.HasFile}" Spacing="9" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Video.FileName}" Classes="fileName"
+                           ToolTip.Tip="{Binding Video.FileName}" />
+
+                <StackPanel Spacing="4" IsVisible="{Binding !Video.HasBlockReason}">
+                  <TextBlock Text="{Binding Video.SpecLine}" Classes="spec" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Video.SecondaryLine}" Classes="tiny" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border IsVisible="{Binding Video.HasBlockReason}"
+                        Background="#F7E7E2" BorderBrush="#E0BDB3" BorderThickness="1"
+                        CornerRadius="8" Padding="10,8">
+                  <TextBlock Text="{Binding Video.BlockReason}" TextWrapping="Wrap"
+                             FontSize="12" Foreground="#A8402C" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
+
+            <Button Grid.Row="1" Name="PickVideoButton" Classes="ghost"
+                    Content="{Binding Video.PickButtonText}"
+                    Click="OnPickVideo" IsEnabled="{Binding CanPickFiles}"
+                    HorizontalAlignment="Stretch" Margin="0,16,0,0" />
+          </Grid>
+        </Border>
+
+        <!-- 音频卡 -->
+        <Border Grid.Column="2" Name="AudioCard" Classes="card" MinHeight="190">
+          <Grid RowDefinitions="*,Auto">
+            <StackPanel Grid.Row="0" Spacing="11" VerticalAlignment="Center">
+
+              <StackPanel IsVisible="{Binding Audio.IsEmpty}" Spacing="8"
+                          VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="🎵" FontSize="34" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Audio.EmptyTitle}" Classes="body" FontSize="14.5"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Audio.EmptyHint}" Classes="tiny" HorizontalAlignment="Center" />
+                <TextBlock Text="也可以把文件拖进这个框" Classes="faint" HorizontalAlignment="Center"
+                           Margin="0,3,0,0" />
+              </StackPanel>
+
+              <StackPanel IsVisible="{Binding Audio.HasFile}" Spacing="9" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Audio.FileName}" Classes="fileName"
+                           ToolTip.Tip="{Binding Audio.FileName}" />
+
+                <StackPanel Spacing="4" IsVisible="{Binding !Audio.HasBlockReason}">
+                  <TextBlock Text="{Binding Audio.SpecLine}" Classes="spec" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Audio.SecondaryLine}" Classes="tiny" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border IsVisible="{Binding Audio.HasBlockReason}"
+                        Background="#F7E7E2" BorderBrush="#E0BDB3" BorderThickness="1"
+                        CornerRadius="8" Padding="10,8">
+                  <TextBlock Text="{Binding Audio.BlockReason}" TextWrapping="Wrap"
+                             FontSize="12" Foreground="#A8402C" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
+
+            <Button Grid.Row="1" Name="PickAudioButton" Classes="ghost"
+                    Content="{Binding Audio.PickButtonText}"
+                    Click="OnPickAudio" IsEnabled="{Binding CanPickFiles}"
+                    HorizontalAlignment="Stretch" Margin="0,16,0,0" />
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- ───── 时长比对 + 偏移入口 ───── -->
+      <Border Grid.Row="1" Background="#FBF8F2" BorderBrush="#E2DCCD"
+              BorderThickness="1" CornerRadius="12" Padding="10,8" Margin="0,12,0,0">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="7"
+                      VerticalAlignment="Center" Margin="6,0,0,0">
+            <TextBlock Text="{Binding DurationSymbol}" FontSize="13" FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Foreground="{Binding DurationBrush, Converter={StaticResource HexToBrush}}" />
+            <TextBlock Text="{Binding DurationText}" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{Binding DurationBrush, Converter={StaticResource HexToBrush}}" />
+          </StackPanel>
+
+          <!-- 时长不一致时把用户引到偏移功能上 -->
+          <TextBlock Grid.Column="1" Text="{Binding DurationHint}"
+                     IsVisible="{Binding HasDurationHint}"
+                     FontSize="11.5" Foreground="#8A5F14"
+                     VerticalAlignment="Center" TextWrapping="NoWrap"
+                     Margin="14,0" TextTrimming="CharacterEllipsis" />
+
+          <!-- 整块可点：文字 + 值 + 箭头都算命中区，不再只有"无"字能点。
+               设置过偏移后整块变浅绿底，一眼能看出"这个功能被改过"。 -->
+          <Button Grid.Column="2" Name="OffsetButton" Classes="offsetEntry"
+                  Classes.active="{Binding HasOffset}"
+                  Click="OnOpenOffset" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <TextBlock Text="音频偏移" FontSize="12.5" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding OffsetLabel}" FontSize="12.5" FontWeight="SemiBold"
+                         VerticalAlignment="Center" />
+              <TextBlock Text="›" FontSize="14" VerticalAlignment="Center" Opacity="0.55" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- 底部操作区：不加额外内缩，左右边界与卡片最外边缘严格对齐 -->
+      <StackPanel Grid.Row="2" Spacing="0">
+      <!-- ───── 提醒摘要 + 详情入口（完整清单在弹窗里）─────
+           不做行内展开：展开会把卡片和窗口撑高、把内容挤出窗口下边界，
+           实测表现就是"点了详情什么都没出现"。
+           "详情"单独占一行而不是和摘要挤在同一行 —— 挤在一起两边都局促。 -->
+      <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="26" IsVisible="{Binding HasWarning}">
+        <TextBlock Grid.Column="0" Text="{Binding WarningTag}" FontSize="12.5"
+                   FontWeight="SemiBold" Foreground="#8A5F14" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding WarningSummary}" TextWrapping="NoWrap"
+                   TextTrimming="CharacterEllipsis" FontSize="12.5" Foreground="#8A5F14"
+                   VerticalAlignment="Center" Margin="12,0,14,0" />
+        <Button Grid.Column="2" Name="WarningToggleButton" Classes="notice"
+                Content="{Binding WarningLinkText}"
+                Click="OnOpenNotices" VerticalAlignment="Center" />
+      </Grid>
+
+      <!-- ───── 开始 ───── -->
+      <!--
+        注意：这里必须显式声明列，并给按钮 HorizontalAlignment="Stretch"。
+        否则按钮会按内容测量成一个很小的方块贴在最左边（实测宽度只有 38px）。
+        下面那一行只在真有内容时才占位（ShowStatusArea），
+        两个文件都就绪时整行塌缩，按钮下方不留任何文字和空白。
+      -->
+      <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
+        <Button Grid.Row="0" Grid.Column="0" Name="StartButton" Classes="primary" Content="开 始"
+                Click="OnStart" IsEnabled="{Binding CanStart}"
+                Margin="0,12,0,0"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                MinHeight="30" />
+
+        <Grid Grid.Row="1" Grid.Column="0" ColumnDefinitions="*,Auto" Margin="0,7,0,0" MinHeight="17"
+              IsVisible="{Binding ShowStatusArea}">
+          <ProgressBar Grid.Column="0" IsVisible="{Binding Busy}"
+                       Value="{Binding Progress}" Minimum="0" Maximum="1"
+                       VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding ProgressText}" Classes="tiny"
+                     IsVisible="{Binding Busy}" VerticalAlignment="Center" Margin="10,0,0,0" />
+          <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding StatusLine}"
+                     Classes="muted" TextWrapping="Wrap" VerticalAlignment="Center"
+                     IsVisible="{Binding !Busy}"
+                     Foreground="{Binding StatusLineBrush, Converter={StaticResource HexToBrush}}" />
+        </Grid>
+      </Grid>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Window>

@@ -1,0 +1,24 @@
+# Build output
+dist/
+bin/
+obj/
+
+# Locally downloaded ffmpeg (re-downloaded automatically on a new machine)
+tools/
+
+# Runtime artifacts
+错误日志.txt
+*.log
+*.tmp
+*.partial.mkv
+
+# Editors / OS
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
+
+# Manual test samples (generated outside the repo; guard in case they get moved in)
+测试素材/

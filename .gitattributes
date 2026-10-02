@@ -1,0 +1,38 @@
+# 换行符统一策略
+#
+# 为什么需要这个文件：
+# 这个工程在不同机器上编辑过，.cs 是 LF、.bat/.ps1 是 CRLF，混在一起。
+# 不显式声明的话，git 会按 core.autocrlf 自动转换，导致：
+#   · 每次 checkout 都有大量"文件被修改"的假变更
+#   · 协作时整个文件 diff 全是换行符变化，真正的改动被淹没
+#
+# 规则：仓库里统一存 LF，检出到 Windows 时按类型转换。
+
+# 默认：交给 git 判断
+* text=auto
+
+# 源码与文档：强制 LF
+*.cs        text eol=lf
+*.axaml     text eol=lf
+*.csproj    text eol=lf
+*.sln       text eol=lf
+*.md        text eol=lf
+*.json      text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# 批处理与 PowerShell：强制 CRLF
+#
+# .bat 必须是 CRLF —— cmd.exe 对 LF 结尾的批处理在某些情况下会解析异常。
+# .ps1 用 CRLF 是 Windows 上的惯例，且与"必须带 UTF-8 BOM"的约定配套。
+*.bat       text eol=crlf
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+
+# 二进制：不要做任何转换
+*.exe   binary
+*.dll   binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.ico   binary

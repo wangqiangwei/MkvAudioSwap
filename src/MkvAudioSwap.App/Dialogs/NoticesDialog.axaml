@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MkvAudioSwap.App.Dialogs.NoticesDialog"
+        Title="提醒"
+        Width="600" Height="520"
+        SizeToContent="Manual"
+        CanResize="True"
+        MinWidth="520" MinHeight="360"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Microsoft YaHei UI, Segoe UI, sans-serif"
+        Background="#F5F1E8">
+
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#4A7560" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="20,10" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#3C6250" />
+    </Style>
+    <Style Selector="TextBlock.sectionHeader">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#6F6659" />
+    </Style>
+    <Style Selector="TextBlock.noticeText">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="LineHeight" Value="19" />
+      <Setter Property="Foreground" Value="#3B342B" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24,22,24,20">
+
+    <!-- 标题 -->
+    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,14">
+      <TextBlock Name="TitleText" FontSize="16" FontWeight="SemiBold" Foreground="#2E2923" />
+      <TextBlock Name="SubtitleText" FontSize="12" Foreground="#6F6659" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <!-- 清单：可滚动，永远不会撑破窗口 -->
+    <Border Grid.Row="1" Background="#FBF8F2" BorderBrush="#E2DCCD" BorderThickness="1"
+            CornerRadius="10" Padding="4">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,10">
+        <ItemsControl Name="NoticeList">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,12">
+                <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontSize="12.5"
+                           Foreground="{Binding Brush}" Margin="0,2,8,0" VerticalAlignment="Top" />
+                <StackPanel Grid.Column="1" Spacing="3">
+                  <TextBlock Classes="noticeText" Text="{Binding Text}" />
+                  <TextBlock Text="{Binding Source}" FontSize="11" Foreground="#8C8375"
+                             IsVisible="{Binding HasSource}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+
+    <!-- 底部 -->
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,14,0,0">
+      <TextBlock Grid.Column="0" Name="FooterText" FontSize="11.5" Foreground="#6F6659"
+                 TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <Button Grid.Column="1" Classes="primary" Content="知道了" Click="OnClose"
+              VerticalAlignment="Center" />
+    </Grid>
+  </Grid>
+</Window>

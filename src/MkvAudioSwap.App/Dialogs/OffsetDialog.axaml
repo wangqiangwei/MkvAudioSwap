@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MkvAudioSwap.App.Dialogs.OffsetDialog"
+        Title="音频偏移"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Microsoft YaHei UI, Segoe UI, sans-serif"
+        Background="#F5F1E8">
+
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#4A7560" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="20,10" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#3C6250" />
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#5C5449" />
+      <Setter Property="BorderBrush" Value="#E2DCCD" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="16,9" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#F0EBE0" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#FBF8F2" />
+      <Setter Property="BorderBrush" Value="#CFC6B2" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="26,24,26,22" Spacing="16">
+
+    <StackPanel Spacing="3">
+      <TextBlock Text="音频偏移" FontSize="16" FontWeight="SemiBold" Foreground="#2E2923" />
+      <TextBlock Text="只有在导出的音频整体比视频早或晚了一点点时才需要设置。"
+                 FontSize="12" Foreground="#6F6659" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <!-- 输入 -->
+    <Border Background="#FBF8F2" BorderBrush="#E2DCCD" BorderThickness="1"
+            CornerRadius="10" Padding="16,15">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+          <TextBox Grid.Column="0" Name="OffsetBox" Width="150" Height="40"
+                   HorizontalContentAlignment="Right" VerticalContentAlignment="Center"
+                   Padding="12,7" TextChanged="OnOffsetChanged" />
+          <TextBlock Grid.Column="1" Text="毫秒" FontSize="13.5" Foreground="#5C5449"
+                     VerticalAlignment="Center" Margin="10,0,0,0" />
+
+          <!-- 同时给出"秒"：DAW 里量到的偏差通常是 0.3 秒这种量级，不是 300 毫秒 -->
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5"
+                      VerticalAlignment="Center" Margin="18,0,0,0">
+            <TextBlock Text="=" FontSize="13" Foreground="#7A7164" VerticalAlignment="Center" />
+            <TextBlock Name="SecondsValue" FontSize="15" FontWeight="SemiBold"
+                       FontFamily="Consolas, Cascadia Mono, monospace"
+                       Foreground="#4A7560" VerticalAlignment="Center" />
+            <TextBlock Text="秒" FontSize="13" Foreground="#5C5449" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <Button Grid.Column="3" Name="ZeroButton" Classes="ghost" Content="归零" Click="OnZero"
+                  VerticalAlignment="Center" Padding="14,8" FontSize="12.5" />
+        </Grid>
+
+        <Grid ColumnDefinitions="*,*" >
+          <Border Grid.Column="0" Background="#E4EDE6" CornerRadius="7" Padding="10,8" Margin="0,0,5,0">
+            <StackPanel Spacing="2">
+              <TextBlock Text="正值" FontSize="12" FontWeight="SemiBold" Foreground="#3F6B52" />
+              <TextBlock Text="音频晚出现（往后推）" FontSize="11.5" Foreground="#4E5A52" />
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="1" Background="#F7F1E4" CornerRadius="7" Padding="10,8" Margin="5,0,0,0">
+            <StackPanel Spacing="2">
+              <TextBlock Text="负值" FontSize="12" FontWeight="SemiBold" Foreground="#8A5F14" />
+              <TextBlock Text="音频早出现（往前提）" FontSize="11.5" Foreground="#6B5C3C" />
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <TextBlock FontSize="12" Foreground="#5C5449" TextWrapping="Wrap" LineHeight="19"
+                   Text="导出时前面多了 0.3 秒静音 → 填 -300（也就是 -0.3 秒）&#x0a;发现人声比画面快了 0.5 秒 → 填 +500（也就是 +0.5 秒）" />
+      </StackPanel>
+    </Border>
+
+    <!-- 两条必须说清楚的前提 -->
+    <StackPanel Spacing="7">
+      <Border Background="#F7F1E4" BorderBrush="#E8DCC0" BorderThickness="1"
+              CornerRadius="8" Padding="11,9">
+        <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="#7A5512" LineHeight="18"
+                   Text="⚠ 如果是在 DAW 里裁过片段导致对不上，请重新导出完整长度，不要用偏移硬凑。" />
+      </Border>
+      <Border Background="#F7F1E4" BorderBrush="#E8DCC0" BorderThickness="1"
+              CornerRadius="8" Padding="11,9">
+        <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="#7A5512" LineHeight="18"
+                   Text="⚠ 程序只比对时长，不比对内容。两段时长完全一致的音频，一个从第 0 秒对齐、一个从第 0.5 秒开始，程序都会说“时长一致”。" />
+      </Border>
+    </StackPanel>
+
+    <!-- 预览结果 -->
+    <TextBlock Name="PreviewStatus" FontSize="11.5" Foreground="#6F6659"
+               TextWrapping="Wrap" IsVisible="False" />
+
+    <!-- 操作 -->
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+      <Button Grid.Column="0" Name="PreviewButton" Classes="ghost" Content="预览前 10 秒"
+              Click="OnPreview" />
+      <Button Grid.Column="2" Classes="ghost" Content="取消" Click="OnCancel" Margin="0,0,10,0" />
+      <Button Grid.Column="3" Name="OkButton" Classes="primary" Content="确定" Click="OnOk" />
+    </Grid>
+
+    <TextBlock Text="预览会重新编码成一个低清小文件并自动播放，只用于检查对齐，不是最终输出。"
+               FontSize="11" Foreground="#7A7164" TextWrapping="Wrap" />
+  </StackPanel>
+</Window>
