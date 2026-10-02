@@ -167,24 +167,64 @@ Report $a3 '配 03 使用 → 应显示 ⚠ 音频长 15 秒'
 
 # ─────────────────────────────────────────────────────────────
 Write-Host ''
-Write-Host '[4/12] 不是线性 PCM 的音频（应被拦住）' -ForegroundColor Yellow
-$mp3 = Join-Path $OutDir '06_音频是MP3_会被拦.mp3'
+Write-Host '[4/12] 无损压缩编码（放行，且仍然无损）' -ForegroundColor Yellow
+Write-Host '       实测：FLAC / ALAC / WavPack 都能 -c copy 进 MKV'
+
+$flac = Join-Path $OutDir '06_音频是FLAC_无损放行.flac'
+FF @('-hide_banner','-loglevel','error',
+      '-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=30',
+      '-af','aformat=channel_layouts=stereo','-c:a','flac','-n',$flac)
+Report $flac '应放行。FLAC 是无损压缩，搬进 MKV 后仍然无损'
+
+$alac = Join-Path $OutDir '07_音频是ALAC_无损放行.m4a'
+FF @('-hide_banner','-loglevel','error',
+      '-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=30',
+      '-af','aformat=channel_layouts=stereo','-c:a','alac','-n',$alac)
+Report $alac '同上，ALAC 也是无损压缩'
+
+$wv = Join-Path $OutDir '08_音频是WavPack_无损放行.wv'
+FF @('-hide_banner','-loglevel','error',
+      '-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=30',
+      '-af','aformat=channel_layouts=stereo','-c:a','wavpack','-n',$wv)
+Report $wv '同上，WavPack 也是无损压缩（比较冷门，一并覆盖）'
+
+# ─────────────────────────────────────────────────────────────
+Write-Host ''
+Write-Host '[4b/12] 有损压缩编码（放行，但应明确警示）' -ForegroundColor Yellow
+
+$mp3 = Join-Path $OutDir '06b_音频是MP3_有损但放行.mp3'
 FF @('-hide_banner','-loglevel','error',
       '-f','lavfi','-i','sine=frequency=440:sample_rate=44100:duration=30',
       '-af','aformat=channel_layouts=stereo','-c:a','libmp3lame','-b:a','192k','-n',$mp3)
-Report $mp3 '拖进音频槽 → 应红字拦住，提示检测到 mp3、请在 DAW 用线性 PCM 重导'
+Report $mp3 '应放行，但黄字说明"音频已经有损，成品会有损"'
 
-$m4a = Join-Path $OutDir '07_音频是AAC_会被拦.m4a'
+$m4a = Join-Path $OutDir '07b_音频是AAC_有损但放行.m4a'
 FF @('-hide_banner','-loglevel','error',
       '-f','lavfi','-i','sine=frequency=440:sample_rate=44100:duration=30',
       '-af','aformat=channel_layouts=stereo','-c:a','aac','-b:a','192k','-n',$m4a)
 Report $m4a '同上，检测到 aac'
 
-$flac = Join-Path $OutDir '08_音频是FLAC_会被拦.flac'
+$opus = Join-Path $OutDir '08b_音频是Opus_有损但放行.opus'
 FF @('-hide_banner','-loglevel','error',
       '-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=30',
-      '-af','aformat=channel_layouts=stereo','-c:a','flac','-n',$flac)
-Report $flac '无损但不是线性 PCM → 也应被拦住（这是最容易误以为"能用"的一个）'
+      '-af','aformat=channel_layouts=stereo','-c:a','libopus','-b:a','128k','-n',$opus)
+Report $opus '同上，检测到 opus。注意 Opus 采样率固定 48kHz'
+
+# ─────────────────────────────────────────────────────────────
+Write-Host ''
+Write-Host '[4c/12] 唯一装不进 MKV 的编码：裸 TrueHD' -ForegroundColor Yellow
+Write-Host '       实测 matroska 写不了头（sample rate not set）'
+$thd = Join-Path $OutDir '08c_音频是TrueHD_会被拦.thd'
+    # truehd 是实验性编码器，必须加 -strict -2，否则报 'experimental codecs are not enabled'
+    # 用 FF 包装而不是直接 & 调用 —— 见文件开头关于 stderr 被提升成异常的那条说明
+    try {
+        FF @('-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:sample_rate=48000:duration=10','-af','aformat=channel_layouts=stereo','-c:a','truehd','-strict','-2','-y',$thd)
+    } catch { Write-Host ('  truehd 生成失败，跳过：' + $_.Exception.Message) -ForegroundColor DarkGray }
+if (Test-Path $thd) {
+    Report $thd '应红字拦住，说明这个编码无法原样封进 MKV'
+} else {
+    Write-Host '  （本机 ffmpeg 没编 truehd 编码器，跳过此用例）' -ForegroundColor DarkGray
+}
 
 # ─────────────────────────────────────────────────────────────
 Write-Host ''

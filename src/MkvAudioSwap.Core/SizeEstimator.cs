@@ -4,10 +4,10 @@ namespace MkvAudioSwap.Core;
 public static class SizeEstimator
 {
     /// <summary>
-    /// 估算输出体积（字节）。取源视频的视频码率 + 新音频的原始 PCM 码率。
+    /// 估算输出体积（字节）。取源视频的视频码率 + 新音频的码率。
     /// 拿不到源视频码率时返回 null（不猜）。
     /// </summary>
-    public static long? EstimateOutputBytes(MediaFileInfo video, MediaStreamInfo pcmAudio)
+    public static long? EstimateOutputBytes(MediaFileInfo video, MediaStreamInfo audio)
     {
         if (video.FormatDurationSeconds is not > 0) return null;
 
@@ -21,12 +21,31 @@ public static class SizeEstimator
         var sourceAudioBitrate = video.FirstAudio?.BitRate ?? 0;
         var videoBitrate = Math.Max(totalBitrate - sourceAudioBitrate, totalBitrate * 0.2);
 
-        var pcmBitrate = (double)pcmAudio.SampleRate * pcmAudio.Channels * Math.Max(pcmAudio.EffectiveBits, 16);
-
-        var bytes = (videoBitrate + pcmBitrate) / 8.0 * duration;
+        var bytes = (videoBitrate + EstimateAudioBitrate(audio)) / 8.0 * duration;
 
         // 容器开销留 2% 余量
         return (long)(bytes * 1.02);
+    }
+
+    /// <summary>
+    /// 新音轨的码率（bits/s）。
+    ///
+    /// 分两种情况，混用会算错得很离谱：
+    ///   · 未压缩 PCM：码率由 采样率 × 声道 × 位深 决定 —— 文件里通常没有 bit_rate 字段，
+    ///     必须自己算（48kHz/24bit/立体声 = 2304 kbps）。
+    ///   · 压缩格式（FLAC/ALAC/MP3/AAC…）：直接用文件里记录的码率。
+    ///     如果对这种格式套 PCM 公式，会高估十几倍（比如 128kbps 的 MP3 被算成 1.5Mbps）。
+    /// </summary>
+    private static double EstimateAudioBitrate(MediaStreamInfo audio)
+    {
+        if (!AudioCodecs.IsLinearPcm(audio.CodecName) && audio.BitRate is > 0)
+            return audio.BitRate.Value;
+
+        if (audio.SampleRate > 0 && audio.Channels > 0)
+            return (double)audio.SampleRate * audio.Channels * Math.Max(audio.EffectiveBits, 16);
+
+        // 压缩格式且没有码率信息时，按 256 kbps 粗估（宁可高估也不要低估到误导用户）
+        return 256_000;
     }
 
     public static string FormatBytes(long bytes)

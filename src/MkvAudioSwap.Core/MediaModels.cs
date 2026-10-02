@@ -41,9 +41,20 @@ public sealed class MediaStreamInfo
     public bool IsVideo => string.Equals(CodecType, "video", StringComparison.OrdinalIgnoreCase);
     public bool IsAudio => string.Equals(CodecType, "audio", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>是否线性 PCM。这是新音频能否被无损拷进输出的唯一判据。</summary>
-    public bool IsLinearPcm =>
-        IsAudio && CodecName.StartsWith("pcm_", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// 是否线性 PCM（未压缩）。判据与分类逻辑都在 <see cref="AudioCodecs"/>，这里只是转发，
+    /// 避免"什么算可用"这件事散落在多个文件里。
+    /// </summary>
+    public bool IsLinearPcm => IsAudio && AudioCodecs.IsLinearPcm(CodecName);
+
+    /// <summary>无损压缩（FLAC / ALAC / WavPack / TTA / DTS-HD）。搬进 MKV 后仍然无损。</summary>
+    public bool IsLosslessCompressed => IsAudio && AudioCodecs.IsLosslessCompressed(CodecName);
+
+    /// <summary>是不是无损：未压缩 PCM 或无损压缩。</summary>
+    public bool IsLosslessAudio => IsAudio && AudioCodecs.IsLossless(CodecName);
+
+    /// <summary>有损压缩（MP3 / AAC / Opus / Vorbis / AC3 / 普通 DTS）。</summary>
+    public bool IsLossyAudio => IsAudio && !AudioCodecs.IsLossless(CodecName);
 
     /// <summary>取实际可用的位深：优先 bits_per_sample，回退 bits_per_raw_sample。</summary>
     public int EffectiveBits => BitsPerSample > 0 ? BitsPerSample : BitsPerRawSample;

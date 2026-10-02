@@ -23,14 +23,24 @@ public class SlotEvaluatorTests
         PixelFormat = "yuv420p", DurationSeconds = duration,
     };
 
-    private static MediaStreamInfo Pcm(string codec = "pcm_s24le", int bits = 24, int rate = 48000,
-        int channels = 2, double duration = 5, string? sampleFormat = null) => new()
+    /// <summary>
+    /// 造一条音频流。名字刻意不叫 Pcm —— 现在要测的编码不止 PCM 一种，
+    /// 之前的命名（Pcm("aac")）读起来自相矛盾。
+    /// </summary>
+    private static MediaStreamInfo Audio(string codec = "pcm_s24le", int bits = 24, int rate = 48000,
+        int channels = 2, double duration = 5, string? sampleFormat = null, long? bitRate = null) => new()
     {
         Index = 1, CodecType = "audio", CodecName = codec,
         SampleRate = rate, Channels = channels, BitsPerSample = bits,
-        SampleFormat = sampleFormat ?? (bits == 32 ? "s32" : "s32"),
+        SampleFormat = sampleFormat ?? "s32",
         DurationSeconds = duration,
+        BitRate = bitRate,
     };
+
+    /// <summary>兼容旧调用点的别名。</summary>
+    private static MediaStreamInfo Pcm(string codec = "pcm_s24le", int bits = 24, int rate = 48000,
+        int channels = 2, double duration = 5, string? sampleFormat = null) =>
+        Audio(codec, bits, rate, channels, duration, sampleFormat);
 
     private static MediaStreamInfo Aac(double duration = 5, int rate = 44100) => new()
     {
@@ -48,14 +58,95 @@ public class SlotEvaluatorTests
         Assert.Contains("没有找到视频画面", r.BlockReason);
     }
 
-    [Fact]
-    public void 非PCM音频会被拦并告知怎么重导出()
+    /// <summary>
+    /// 有损编码（MP3/AAC 等）现在<b>放行</b>，但必须明确警示。
+    ///
+    /// 行为变过：旧实现只认 pcm_ 前缀，把 MP3/AAC/FLAC 一律拦下。实测发现
+    /// 它们都能用 -c copy 搬进 MKV，拦住是错的。有损的放行但要说清"成品会有损"。
+    /// </summary>
+    [Theory]
+    [InlineData("aac")]
+    [InlineData("mp3")]
+    [InlineData("opus")]
+    [InlineData("vorbis")]
+    [InlineData("ac3")]
+    public void 有损音频放行但明确警示(string codec)
     {
-        var r = SlotEvaluator.EvaluateAudio(Info(Aac()));
+        var r = SlotEvaluator.EvaluateAudio(Info(Pcm(codec)));
+
+        Assert.Equal(SlotStatus.Ready, r.Status);
+        Assert.Contains(r.Notes, n => n.Level == NoteLevel.Caution && n.Text.Contains("原样搬进成品"));
+    }
+
+    /// <summary>无损压缩（FLAC/ALAC/WavPack）放行，而且不该出现"有损"的警示。</summary>
+    [Theory]
+    [InlineData("flac")]
+    [InlineData("alac")]
+    [InlineData("wavpack")]
+    [InlineData("flac_pcm")]
+    public void 无损压缩放行且不报有损(string codec)
+    {
+        var r = SlotEvaluator.EvaluateAudio(Info(Pcm(codec)));
+
+        Assert.Equal(SlotStatus.Ready, r.Status);
+        Assert.DoesNotContain(r.Notes, n => n.Text.Contains("已经有损"));
+    }
+
+    /// <summary>裸 TrueHD 实测无法封进 MKV（"sample rate not set"），是唯一硬拦的编码。</summary>
+    [Fact]
+    public void TrueHD会被拦下()
+    {
+        var r = SlotEvaluator.EvaluateAudio(Info(Pcm("truehd")));
 
         Assert.Equal(SlotStatus.Blocked, r.Status);
-        Assert.Contains("aac", r.BlockReason);
-        Assert.Contains("DAW", r.BlockReason);
+        Assert.Contains("truehd", r.BlockReason);
+        Assert.Contains("FLAC", r.BlockReason);
+    }
+
+    /// <summary>
+    /// 白名单之外的编码<b>不硬拦</b> —— 我们没法预先枚举 ffmpeg 将来支持什么。
+    /// 真装不进去时由 mkv 封装器给出准确报错。
+    /// </summary>
+    [Fact]
+    public void 白名单外的编码放行并提示来源()
+    {
+        var r = SlotEvaluator.EvaluateAudio(Info(Pcm("some_future_codec")));
+
+        Assert.Equal(SlotStatus.Ready, r.Status);
+        Assert.Contains(r.Notes, n => n.Text.Contains("some_future_codec"));
+    }
+
+    [Fact]
+    public void 编码分类判据()
+    {
+        // 无损：未压缩 PCM + 无损压缩
+        Assert.True(AudioCodecs.IsLossless("pcm_s24le"));
+        Assert.True(AudioCodecs.IsLossless("flac"));
+        Assert.True(AudioCodecs.IsLossless("alac"));
+        Assert.True(AudioCodecs.IsLossless("wavpack"));
+
+        // 有损
+        Assert.False(AudioCodecs.IsLossless("aac"));
+        Assert.False(AudioCodecs.IsLossless("mp3"));
+        Assert.False(AudioCodecs.IsLossless("opus"));
+
+        // 能否 copy 进 MKV
+        Assert.True(AudioCodecs.CanCopyToMkv("flac"));
+        Assert.True(AudioCodecs.CanCopyToMkv("pcm_s16le"));
+        Assert.True(AudioCodecs.CanCopyToMkv("mp3"));
+        Assert.False(AudioCodecs.CanCopyToMkv("truehd"));   // 实测失败
+        Assert.Null(AudioCodecs.CanCopyToMkv("未知编码"));    // 不确定 → 放行由封装器裁决
+
+        // DTS 家族：普通 DTS 是压缩有损，DTS-HD 是无损，靠名字区分
+        Assert.False(AudioCodecs.IsLossless("dts"));
+        Assert.True(AudioCodecs.IsLossless("dts_hd_ma"));
+    }
+
+    [Fact]
+    public void DTS家族能copy进MKV()
+    {
+        Assert.True(AudioCodecs.CanCopyToMkv("dts"));
+        Assert.True(AudioCodecs.CanCopyToMkv("dts_hd"));
     }
 
     [Fact]

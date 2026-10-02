@@ -126,9 +126,9 @@ public static class SlotEvaluator
 
     public static SlotEvaluation EvaluateAudio(MediaFileInfo info)
     {
-        var pcm = info.FirstAudio;
+        var audio = info.FirstAudio;
 
-        if (pcm is null)
+        if (audio is null)
         {
             return new SlotEvaluation(
                 SlotStatus.Blocked,
@@ -136,36 +136,52 @@ public static class SlotEvaluator
                 Array.Empty<Note>());
         }
 
-        if (!pcm.IsLinearPcm)
+        // 只有"确定装不进 MKV"才硬拦（目前就裸 TrueHD 一个）。
+        // 白名单之外的编码一律放行 —— 我们没法预先枚举 ffmpeg 支持什么，
+        // 硬拦会误伤；真装不进去时 mkv 封装器会给出准确报错。
+        if (AudioCodecs.CanCopyToMkv(audio.CodecName) == false)
         {
             return new SlotEvaluation(
                 SlotStatus.Blocked,
-                $"这个文件不是线性 PCM 音频（检测到：{pcm.CodecName}），无法在不重编码的情况下替换。\n" +
-                "请在 DAW 里按 CAF 或 WAV、线性 PCM（Linear PCM）重新导出。",
+                $"这个文件的音频编码（{audio.CodecName}）无法原样封进 MKV。\n" +
+                "请换一个音频文件，或在 DAW 里重新导出（FLAC / WAV / CAF 都可以）。",
                 Array.Empty<Note>());
         }
 
         var notes = new List<Note>();
+        var lossless = AudioCodecs.IsLossless(audio.CodecName);
 
-        // 说明这个文件会被怎么用。用户最容易误解的是"能不能顺便保留原曲伴奏"。
-        notes.Add(new Note(NoteLevel.Info,
-            "这个文件会作为成品里唯一的音轨，原始 PCM 数据逐字节搬运，不做任何压缩或增益处理。"));
+        // 说明这个文件会被怎么用。
+        // 用户最容易误解的是"能不能顺便保留原曲伴奏"，以及"有损文件还有没有救"。
+        notes.Add(lossless
+            ? new Note(NoteLevel.Info,
+                "这个文件会作为成品里唯一的音轨，音频数据逐字节搬运，不做任何压缩或增益处理。")
+            : new Note(NoteLevel.Caution,
+                $"这个文件是{AudioCodecs.Describe(audio.CodecName)}（{audio.CodecName}），" +
+                "音频本身已经有损。工具不会再次编码，会原样搬进成品 —— " +
+                "所以成品的声音和这个文件完全一样，但不可能比它更好。"));
 
         if (info.AudioStreamCount > 1)
             notes.Add(new Note(NoteLevel.Caution, $"文件里有 {info.AudioStreamCount} 条音频流，只使用第 1 条"));
 
-        var bits = pcm.EffectiveBits;
-        if (bits is > 0 and <= 8)
+        // 下面这几条只对 PCM 有意义：压缩格式的"位深/采样格式"不是用户控制的东西
+        if (AudioCodecs.IsLinearPcm(audio.CodecName))
         {
-            notes.Add(new Note(NoteLevel.Caution,
-                $"位深只有 {bits} 位，音质很低。建议在 DAW 里重新导出为 16 位或 24 位。"));
-        }
+            var bits = audio.EffectiveBits;
+            if (bits is > 0 and <= 8)
+            {
+                notes.Add(new Note(NoteLevel.Caution,
+                    $"位深只有 {bits} 位，音质很低，而且这一步会原样保留它。" +
+                    "建议在 DAW 里重新导出为 16 位或 24 位。"));
+            }
 
-        var fmt = (pcm.SampleFormat ?? "").ToLowerInvariant();
-        if (fmt.Contains("flt") || fmt.Contains("dbl"))
-        {
-            notes.Add(new Note(NoteLevel.Caution,
-                $"这是浮点 PCM（{pcm.CodecName}）。能正常使用，但建议导出为定点（16/24 位整数）以避免兼容性问题。"));
+            var fmt = (audio.SampleFormat ?? "").ToLowerInvariant();
+            if (fmt.Contains("flt") || fmt.Contains("dbl"))
+            {
+                notes.Add(new Note(NoteLevel.Caution,
+                    $"这是浮点 PCM（{audio.CodecName}）。能正常使用，" +
+                    "但建议导出为定点（16/24 位整数）以避免兼容性问题。"));
+            }
         }
 
         return new SlotEvaluation(SlotStatus.Ready, null, notes);
