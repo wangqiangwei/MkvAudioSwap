@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MkvAudioSwap.App.Dialogs"
+        x:Class="MkvAudioSwap.App.Dialogs.SettingsDialog"
+        Title="设置"
+        Icon="/Assets/app.png"
+        Width="580" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+  <StackPanel Margin="26,22,26,22" Spacing="16">
+
+    <!-- 标题 -->
+    <Grid ColumnDefinitions="Auto,*">
+      <Border Classes="sectionTile">
+        <Path Data="{StaticResource IconGear}" Stroke="{StaticResource AccentBrush}"
+              StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+              Stretch="Uniform" Width="16" Height="16"
+              HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <StackPanel Grid.Column="1" Spacing="2" Margin="11,0,0,0" VerticalAlignment="Center">
+        <TextBlock Text="设置" Classes="dialogTitle" />
+        <TextBlock Text="保存位置、运行环境与关于。" Classes="dialogSubtitle" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 保存位置 -->
+    <StackPanel Spacing="7">
+      <TextBlock Text="保存位置" Classes="eyebrow" />
+      <Border Classes="dialogCard">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="Auto,*">
+            <Border Classes="iconTile" Width="34" Height="34" CornerRadius="9">
+              <Path Data="{StaticResource IconFolder}" Stroke="{StaticResource AccentBrush}"
+                    StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+                    Stretch="Uniform" Width="16" Height="16"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="2" Margin="10,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="输出文件保存在" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+              <TextBlock Name="DirText" FontSize="11.5" Foreground="{StaticResource TextBrush}"
+                         TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" />
+            </StackPanel>
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Name="ChangeDirButton" Classes="ghost compact" Content="更改…" Click="OnChangeDir" />
+            <Button Name="ResetDirButton" Classes="ghost compact" Content="恢复为视频所在目录"
+                    Click="OnResetDir" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+
+    <!-- 运行环境 -->
+    <StackPanel Spacing="7">
+      <TextBlock Text="运行环境" Classes="eyebrow" />
+      <Border Classes="dialogCard">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="ffmpeg / ffprobe" FontSize="12" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextBrush}" />
+              <TextBlock Text="点下面的按钮检查它们是否就位、能否运行。"
+                         FontSize="11" Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+            <Button Grid.Column="1" Name="CheckButton" Classes="ghost compact"
+                    Content="检查运行环境" Click="OnCheck" VerticalAlignment="Center" />
+          </Grid>
+
+          <ProgressBar Name="CheckProgress" IsIndeterminate="True" IsVisible="False" Height="4" />
+
+          <ItemsControl Name="EnvList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:EnvCheckRow">
+                <Border Classes="infoCard" Margin="0,0,0,6" Padding="10,8">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Path Data="{StaticResource IconCheck}" IsVisible="{Binding Ok}"
+                          Stroke="{StaticResource SuccessBrush}" StrokeThickness="1.7"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="13" Height="13" VerticalAlignment="Top" Margin="0,1,0,0" />
+                    <Path Data="{StaticResource IconBlocked}" IsVisible="{Binding IsFail}"
+                          Stroke="{StaticResource DangerBrush}" StrokeThickness="1.7"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="13" Height="13" VerticalAlignment="Top" Margin="0,1,0,0" />
+                    <StackPanel Grid.Column="1" Spacing="1" Margin="8,0,0,0">
+                      <TextBlock Text="{Binding Label}" FontSize="11.5" FontWeight="SemiBold"
+                                 Foreground="{StaticResource TextBrush}" />
+                      <TextBlock Text="{Binding Detail}" FontSize="10.5"
+                                 Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                 LineHeight="16" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Name="EnvHintText" IsVisible="False" TextWrapping="Wrap"
+                     FontSize="11" Foreground="{StaticResource DangerTextBrush}" LineHeight="17" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+
+    <!-- 关于 -->
+    <StackPanel Spacing="7">
+      <TextBlock Text="关于" Classes="eyebrow" />
+      <Border Classes="dialogCard">
+        <StackPanel Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="9">
+            <Border Classes="brandTile" Width="28" Height="28" CornerRadius="8">
+              <Path Data="{StaticResource IconSwap}" Stroke="White" StrokeThickness="1.8"
+                    StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                    Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Spacing="1" VerticalAlignment="Center">
+              <TextBlock Text="替音工具" FontSize="13" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextBrush}" />
+              <TextBlock Text="把视频的画面原样保留、换成你自己的音频" FontSize="10.5"
+                         Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                     LineHeight="17"
+                     Text="全程使用 ffmpeg 的流拷贝（-c copy），视频与音频都是逐字节搬运，不经过任何重新编码。音频必须是能直接封进 MKV 的编码；FLAC / WAV / CAF 都是无损，MP3 / AAC 会提醒成品有损。" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+
+    <Button Name="CloseButton" Classes="primary compact" Content="关闭" Click="OnClose"
+            HorizontalAlignment="Right" Margin="0,2,0,0" />
+  </StackPanel>
+</Window>

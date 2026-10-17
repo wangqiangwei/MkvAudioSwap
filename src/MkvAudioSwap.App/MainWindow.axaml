@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MkvAudioSwap.App.Controls"
+        xmlns:vm="clr-namespace:MkvAudioSwap.App.ViewModels"
+        x:Class="MkvAudioSwap.App.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="替音工具 — 给视频换上你自己的音频"
+        Icon="/Assets/app.png"
+        Width="880" Height="648"
+        SizeToContent="Manual"
+        CanResize="True"
+        MinWidth="800" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+  <Grid>
+    <!-- 顶部柔光：一层很淡的暖白，让页面不像一块平涂的色块 -->
+    <Border IsHitTestVisible="False" Height="300" VerticalAlignment="Top"
+            Background="{StaticResource TopGlowBrush}" />
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24,16,24,18">
+
+      <!-- ══════════════ 顶栏 ══════════════ -->
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Border Classes="brandTile">
+            <Path Data="{StaticResource IconSwap}" Stroke="White" StrokeThickness="1.8"
+                  StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                  Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+
+          <StackPanel Spacing="1" VerticalAlignment="Center">
+            <TextBlock Text="替音工具" Classes="title" />
+            <TextBlock Text="画面原样保留 · 声音换成你的" Classes="tiny" />
+          </StackPanel>
+
+          <Border Classes="pill" Background="{StaticResource AccentSoftBrush}"
+                  BorderBrush="{StaticResource AccentSoftBorderBrush}"
+                  VerticalAlignment="Center" Margin="7,0,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <Path Data="{StaticResource IconShield}" Stroke="{StaticResource SuccessTextBrush}"
+                    StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round"
+                    Stretch="Uniform" Width="12" Height="12" VerticalAlignment="Center" />
+              <TextBlock Text="全程不重编码" FontSize="10.5" FontWeight="SemiBold"
+                         Foreground="{StaticResource SuccessTextBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <Button Grid.Column="2" Name="SettingsButton" Classes="link"
+                Click="OnOpenSettings" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path Data="{StaticResource IconGear}" Classes="iconSmall"
+                  Stroke="{StaticResource MutedBrush}" />
+            <TextBlock Text="设置" FontSize="12.5" Foreground="{StaticResource MutedBrush}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <!-- ══════════════ 主体 ══════════════ -->
+      <Grid Grid.Row="1" RowDefinitions="*,Auto,Auto">
+
+        <!-- ───────── 两张文件卡 ───────── -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,16,*">
+
+          <!-- 视频 -->
+          <Border Grid.Column="0" Name="VideoCard" Classes="card" MinHeight="236">
+            <Grid RowDefinitions="Auto,*,Auto">
+
+              <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <Border Classes="stepBadge">
+                    <TextBlock Text="{Binding Video.Step}" Classes="spec" FontSize="9.5" />
+                  </Border>
+                  <TextBlock Text="{Binding Video.Role}" FontSize="12.5" FontWeight="SemiBold"
+                             Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <Border Grid.Column="2" Classes="pill" IsVisible="{Binding Video.HasStatusPill}"
+                        Background="{Binding Video.StatusPillBackground}"
+                        BorderBrush="{Binding Video.StatusPillBorder}">
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <Path Data="{StaticResource IconCheck}" IsVisible="{Binding Video.IsReadyClean}"
+                          Stroke="{Binding Video.StatusPillForeground}" StrokeThickness="1.7"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <Path Data="{StaticResource IconWarning}" IsVisible="{Binding Video.HasCautionNotices}"
+                          Stroke="{Binding Video.StatusPillForeground}" StrokeThickness="1.6"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <Path Data="{StaticResource IconBlocked}" IsVisible="{Binding Video.IsBlocked}"
+                          Stroke="{Binding Video.StatusPillForeground}" StrokeThickness="1.6"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Video.StatusPillText}" FontSize="10.5"
+                               FontWeight="SemiBold" Foreground="{Binding Video.StatusPillForeground}"
+                               VerticalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <Grid Grid.Row="1" Margin="0,9,0,0">
+                <!-- 空状态：整块可点 -->
+                <Button Name="PickVideoEmpty" Classes="cardBody" Click="OnPickVideo"
+                        IsVisible="{Binding Video.IsEmpty}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                  <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Classes="emptyArt">
+                      <Grid>
+                        <Ellipse Width="72" Height="72" Fill="#E8F0EA"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Canvas Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center">
+                          <Path Data="{StaticResource EmptyVideoArt}" Stretch="None"
+                                Stroke="{StaticResource AccentBrush}" StrokeThickness="2.2"
+                                StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" Opacity="0.85" />
+                          <Path Data="{StaticResource EmptyVideoSpark}" Stretch="None"
+                                Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6"
+                                StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" Opacity="0.5" />
+                        </Canvas>
+                      </Grid>
+                    </Border>
+
+                    <TextBlock Text="{Binding Video.EmptyTitle}" Classes="emptyTitle" Margin="0,1,0,0" />
+                    <TextBlock Text="{Binding Video.EmptyHint}" Classes="tiny"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="250"
+                               TextAlignment="Center" />
+
+                    <ItemsControl ItemsSource="{Binding Video.FormatChips}" HorizontalAlignment="Center">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Classes="chip" Margin="3,0">
+                            <TextBlock Text="{Binding}" Classes="spec" FontSize="10" />
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="拖入文件，或点击这里选择" Classes="faint"
+                               HorizontalAlignment="Center" Margin="0,1,0,0" />
+                  </StackPanel>
+                </Button>
+
+                <!-- 已选状态 -->
+                <StackPanel IsVisible="{Binding Video.HasFile}" Spacing="10" VerticalAlignment="Center">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Classes="iconTile" Width="36" Height="36" CornerRadius="10">
+                      <Path Data="{StaticResource IconVideo}" Stretch="Uniform" Width="18" Height="18"
+                            Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6"
+                            StrokeLineCap="Round" StrokeJoin="Round"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Video.FileName}" Classes="fileName"
+                                 ToolTip.Tip="{Binding Video.FilePath}" />
+                      <TextBlock Text="{Binding Video.FileSizeText}" Classes="faint"
+                                 IsVisible="{Binding Video.HasFileSize}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <ItemsControl ItemsSource="{Binding Video.SpecChips}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Classes="chip">
+                          <TextBlock Text="{Binding}" Classes="spec" />
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <TextBlock Text="{Binding Video.SecondaryLine}" Classes="tiny"
+                             TextWrapping="Wrap" IsVisible="{Binding Video.HasSecondaryLine}" />
+
+                  <Border Classes="dangerCard" IsVisible="{Binding Video.HasBlockReason}">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <Path Data="{StaticResource IconBlocked}" Stretch="Uniform"
+                            Width="16" Height="16" Stroke="{StaticResource DangerTextBrush}"
+                            StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                            VerticalAlignment="Top" Margin="0,1,0,0" />
+                      <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding Video.BlockReason}"
+                                 TextWrapping="Wrap" FontSize="11.5"
+                                 Foreground="{StaticResource DangerTextBrush}" LineHeight="18" />
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </Grid>
+
+              <Button Grid.Row="2" Name="PickVideoButton" Classes="ghost"
+                      Content="{Binding Video.PickButtonText}" Click="OnPickVideo"
+                      IsEnabled="{Binding CanPickFiles}"
+                      HorizontalAlignment="Stretch" Margin="0,12,0,0" />
+            </Grid>
+          </Border>
+
+          <!-- 音频 -->
+          <Border Grid.Column="2" Name="AudioCard" Classes="card" MinHeight="236">
+            <Grid RowDefinitions="Auto,*,Auto">
+
+              <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <Border Classes="stepBadge">
+                    <TextBlock Text="{Binding Audio.Step}" Classes="spec" FontSize="9.5" />
+                  </Border>
+                  <TextBlock Text="{Binding Audio.Role}" FontSize="12.5" FontWeight="SemiBold"
+                             Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <Border Grid.Column="2" Classes="pill" IsVisible="{Binding Audio.HasStatusPill}"
+                        Background="{Binding Audio.StatusPillBackground}"
+                        BorderBrush="{Binding Audio.StatusPillBorder}">
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <Path Data="{StaticResource IconCheck}" IsVisible="{Binding Audio.IsReadyClean}"
+                          Stroke="{Binding Audio.StatusPillForeground}" StrokeThickness="1.7"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <Path Data="{StaticResource IconWarning}" IsVisible="{Binding Audio.HasCautionNotices}"
+                          Stroke="{Binding Audio.StatusPillForeground}" StrokeThickness="1.6"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <Path Data="{StaticResource IconBlocked}" IsVisible="{Binding Audio.IsBlocked}"
+                          Stroke="{Binding Audio.StatusPillForeground}" StrokeThickness="1.6"
+                          StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                          Width="11" Height="11" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Audio.StatusPillText}" FontSize="10.5"
+                               FontWeight="SemiBold" Foreground="{Binding Audio.StatusPillForeground}"
+                               VerticalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <Grid Grid.Row="1" Margin="0,9,0,0">
+                <Button Name="PickAudioEmpty" Classes="cardBody" Click="OnPickAudio"
+                        IsVisible="{Binding Audio.IsEmpty}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                  <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Classes="emptyArt">
+                      <Grid>
+                        <Ellipse Width="72" Height="72" Fill="#E8F0EA"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Canvas Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center">
+                          <Path Data="{StaticResource EmptyAudioArt}" Stretch="None"
+                                Stroke="{StaticResource AccentBrush}" StrokeThickness="3.1"
+                                StrokeLineCap="Round" Fill="Transparent" Opacity="0.85" />
+                          <Path Data="{StaticResource EmptyAudioSpark}" Stretch="None"
+                                Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6"
+                                StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" Opacity="0.5" />
+                        </Canvas>
+                      </Grid>
+                    </Border>
+
+                    <TextBlock Text="{Binding Audio.EmptyTitle}" Classes="emptyTitle" Margin="0,1,0,0" />
+                    <TextBlock Text="{Binding Audio.EmptyHint}" Classes="tiny"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="250"
+                               TextAlignment="Center" />
+
+                    <ItemsControl ItemsSource="{Binding Audio.FormatChips}" HorizontalAlignment="Center">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Classes="chip" Margin="3,0">
+                            <TextBlock Text="{Binding}" Classes="spec" FontSize="10" />
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="拖入文件，或点击这里选择" Classes="faint"
+                               HorizontalAlignment="Center" Margin="0,1,0,0" />
+                  </StackPanel>
+                </Button>
+
+                <StackPanel IsVisible="{Binding Audio.HasFile}" Spacing="10" VerticalAlignment="Center">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Classes="iconTile" Width="36" Height="36" CornerRadius="10">
+                      <Path Data="{StaticResource IconAudio}" Stretch="Uniform" Width="18" Height="18"
+                            Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6"
+                            StrokeLineCap="Round" StrokeJoin="Round"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Audio.FileName}" Classes="fileName"
+                                 ToolTip.Tip="{Binding Audio.FilePath}" />
+                      <TextBlock Text="{Binding Audio.FileSizeText}" Classes="faint"
+                                 IsVisible="{Binding Audio.HasFileSize}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <ItemsControl ItemsSource="{Binding Audio.SpecChips}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Classes="chip">
+                          <TextBlock Text="{Binding}" Classes="spec" />
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <TextBlock Text="{Binding Audio.SecondaryLine}" Classes="tiny"
+                             TextWrapping="Wrap" IsVisible="{Binding Audio.HasSecondaryLine}" />
+
+                  <Border Classes="dangerCard" IsVisible="{Binding Audio.HasBlockReason}">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <Path Data="{StaticResource IconBlocked}" Stretch="Uniform"
+                            Width="16" Height="16" Stroke="{StaticResource DangerTextBrush}"
+                            StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                            VerticalAlignment="Top" Margin="0,1,0,0" />
+                      <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding Audio.BlockReason}"
+                                 TextWrapping="Wrap" FontSize="11.5"
+                                 Foreground="{StaticResource DangerTextBrush}" LineHeight="18" />
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </Grid>
+
+              <Button Grid.Row="2" Name="PickAudioButton" Classes="ghost"
+                      Content="{Binding Audio.PickButtonText}" Click="OnPickAudio"
+                      IsEnabled="{Binding CanPickFiles}"
+                      HorizontalAlignment="Stretch" Margin="0,12,0,0" />
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- ───────── 合成摘要 ───────── -->
+        <Border Grid.Row="1" Classes="summary" Margin="0,12,0,0">
+          <Grid ColumnDefinitions="1.05*,Auto,1.25*,Auto" VerticalAlignment="Center">
+
+            <!-- 时长 -->
+            <StackPanel Grid.Column="0" Spacing="5" VerticalAlignment="Center">
+              <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+                <TextBlock Text="时长检查" Classes="eyebrow" VerticalAlignment="Center" />
+                <Path Grid.Column="1" Data="{StaticResource IconCheck}" IsVisible="{Binding IsDurationMatch}"
+                      Stroke="{StaticResource SuccessBrush}" StrokeThickness="1.7" Margin="7,0,0,0"
+                      StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                      Width="13" Height="13" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="≈" IsVisible="{Binding IsDurationClose}"
+                           FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}"
+                           Margin="7,0,0,0" VerticalAlignment="Center" />
+                <Path Grid.Column="1" Data="{StaticResource IconWarning}" IsVisible="{Binding IsDurationMismatch}"
+                      Stroke="{StaticResource WarnBrush}" StrokeThickness="1.6" Margin="7,0,0,0"
+                      StrokeLineCap="Round" StrokeJoin="Round" Stretch="Uniform"
+                      Width="13" Height="13" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding DurationText}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{Binding DurationBrush}" VerticalAlignment="Center"
+                           Margin="7,0,0,0" TextTrimming="CharacterEllipsis" />
+              </Grid>
+
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1,0,0">
+                <TextBlock Text="V" Classes="timelineLabel" Margin="0,0,6,0" />
+                <controls:DurationTimeline Grid.Column="1" Height="22"
+                                           VideoSeconds="{Binding VideoTimelineSeconds}"
+                                           AudioSeconds="{Binding AudioTimelineSeconds}"
+                                           OffsetSeconds="{Binding TimelineOffsetSeconds}"
+                                           VideoBrush="{StaticResource AccentBrush}"
+                                           AudioBrush="{Binding TimelineAudioBrush}" />
+                <TextBlock Grid.Column="2" Text="A" Classes="timelineLabel" Margin="6,0,0,0" />
+              </Grid>
+
+              <TextBlock Text="{Binding DurationHint}" IsVisible="{Binding HasDurationHint}"
+                         FontSize="10.5" Foreground="{StaticResource WarnTextBrush}"
+                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <Border Grid.Column="1" Width="1" Background="{StaticResource DividerBrush}"
+                    Margin="16,2,16,2" />
+
+            <!-- 输出 -->
+            <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center" Margin="0,0,8,0">
+              <TextBlock Text="将输出" Classes="eyebrow" />
+              <Grid ColumnDefinitions="Auto,*">
+                <Path Data="{StaticResource IconFile}" Stroke="{StaticResource AccentBrush}"
+                      StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+                      Stretch="Uniform" Width="14" Height="14" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding OutputFileName}"
+                           FontFamily="{StaticResource MonoFont}" FontSize="11.5"
+                           Foreground="{StaticResource TextBrush}" Margin="7,0,0,0"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           ToolTip.Tip="{Binding OutputFileTooltip}" />
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Spacing="0">
+                <Border Classes="chip" Margin="0,0,6,0">
+                  <TextBlock Text="MKV" Classes="spec" FontSize="10" />
+                </Border>
+                <Border Classes="chip" Margin="0,0,6,0" IsVisible="{Binding HasEstimatedSize}">
+                  <TextBlock Text="{Binding EstimatedSizeText}" Classes="spec" FontSize="10" />
+                </Border>
+              </StackPanel>
+
+              <TextBlock Text="{Binding OutputFolderText}" Classes="faint" FontSize="10"
+                         IsVisible="{Binding HasOutputFolder}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <!-- 偏移入口：整块可点 -->
+            <Button Grid.Column="3" Name="OffsetButton" Classes="offsetEntry"
+                    Classes.active="{Binding HasOffset}" Click="OnOpenOffset"
+                    VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Path Data="{StaticResource IconSliders}"
+                      Stroke="{Binding $parent[Button].Foreground, FallbackValue=#6F6659}"
+                      StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round"
+                      Stretch="Uniform" Width="13" Height="13" VerticalAlignment="Center" />
+                <TextBlock Text="音频偏移" FontSize="11.5" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding OffsetLabel}" FontSize="11.5" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <Path Data="{StaticResource IconChevronRight}"
+                      Stroke="{Binding $parent[Button].Foreground, FallbackValue=#6F6659}"
+                      StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round"
+                      Stretch="Uniform" Width="9" Height="9" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Border>
+
+        <!-- ───────── 提醒摘要 ───────── -->
+        <Border Grid.Row="2" Classes="warnCard" IsVisible="{Binding HasWarning}"
+                Margin="0,10,0,0" Padding="12,7">
+          <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <Path Data="{StaticResource IconWarning}" Stroke="{StaticResource WarnTextBrush}"
+                    StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+                    Stretch="Uniform" Width="13" Height="13" VerticalAlignment="Center" />
+              <TextBlock Text="提醒" FontSize="11.5" FontWeight="SemiBold"
+                         Foreground="{StaticResource WarnTextBrush}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding WarningCountLabel}" IsVisible="{Binding HasWarningCount}"
+                         FontSize="10.5" Foreground="{StaticResource WarnTextBrush}"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+
+            <TextBlock Grid.Column="1" Text="{Binding WarningSummary}"
+                       FontSize="11.5" Foreground="{StaticResource WarnTextBrush}"
+                       Margin="9,0,12,0" VerticalAlignment="Center"
+                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+
+            <Button Grid.Column="2" Name="WarningToggleButton" Classes="notice"
+                    Click="OnOpenNotices" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="3">
+                <TextBlock Text="{Binding WarningLinkText}" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{StaticResource WarnTextBrush}" VerticalAlignment="Center" />
+                <Path Data="{StaticResource IconChevronRight}" Stroke="{StaticResource WarnTextBrush}"
+                      StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round"
+                      Stretch="Uniform" Width="9" Height="9" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- ══════════════ 底部 ══════════════ -->
+      <StackPanel Grid.Row="2" Spacing="0">
+        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*">
+          <!--
+            必须显式声明列 + HorizontalAlignment="Stretch"。
+            否则按钮会按内容测量成一个 38px 的小方块贴在最左边（实测）。
+          -->
+          <Button Grid.Row="0" Grid.Column="0" Name="StartButton" Classes="primary"
+                  Click="OnStart" IsEnabled="{Binding CanStart}"
+                  Margin="0,12,0,0" HorizontalAlignment="Stretch" MinHeight="50">
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+              <Path Data="{StaticResource IconSwap}" IsVisible="{Binding CanStart}"
+                    Stroke="{Binding $parent[Button].Foreground, FallbackValue=White}"
+                    StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                    Stretch="Uniform" Width="17" Height="17" VerticalAlignment="Center" />
+              <TextBlock Text="开 始" FontSize="15" FontWeight="SemiBold"
+                         Foreground="{Binding $parent[Button].Foreground, FallbackValue=White}"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <!-- 状态行：只在有内容时占位（ADR-014） -->
+          <Grid Grid.Row="1" Grid.Column="0" Margin="0,7,0,0" MinHeight="18"
+                IsVisible="{Binding ShowStatusArea}">
+
+            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding Busy}">
+              <TextBlock Text="{Binding StatusText}" FontSize="11.5"
+                         Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
+                         Margin="0,0,12,0" />
+              <ProgressBar Grid.Column="1" Value="{Binding Progress}" Minimum="0" Maximum="1"
+                           VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding ProgressText}" Classes="tiny"
+                         VerticalAlignment="Center" Margin="10,0,0,0" />
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                        IsVisible="{Binding !Busy}">
+              <Ellipse Width="5" Height="5" Fill="{Binding StatusLineBrush}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding StatusLine}" Foreground="{Binding StatusLineBrush}"
+                         FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </StackPanel>
+          </Grid>
+        </Grid>
+      </StackPanel>
+
+    </Grid>
+  </Grid>
+</Window>

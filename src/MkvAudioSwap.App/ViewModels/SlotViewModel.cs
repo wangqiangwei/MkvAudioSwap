@@ -1,0 +1,273 @@
+using System.Collections.ObjectModel;
+using Avalonia.Media;
+using MkvAudioSwap.Core;
+
+namespace MkvAudioSwap.App;
+
+/// <summary>卡片里的一条备注。颜色和符号一起给，色弱用户也能分辨。</summary>
+public sealed class NoteViewModel
+{
+    /// <param name="source">
+    /// 这条提醒来自哪个文件。汇总成一份清单后必须标出来源，
+    /// 否则用户分不清“采样率不同”说的是视频音轨还是他导出的音频。
+    /// 单张卡片内部显示时传空字符串即可（上下文已经说明了来源）。
+    /// </param>
+    public NoteViewModel(Note note, string source = "")
+    {
+        Text = note.Text;
+        Level = note.Level;
+        Source = source;
+        Brush = Palette.ForLevel(note.Level);
+        Symbol = note.Level switch
+        {
+            NoteLevel.Caution => "⚠",
+            NoteLevel.Danger => "⛔",
+            _ => "·",
+        };
+        Display = note.Level == NoteLevel.Info ? Text : Symbol + " " + Text;
+    }
+
+    public string Text { get; }
+    public NoteLevel Level { get; }
+    public string Source { get; }
+    public bool HasSource => Source.Length > 0;
+    public string Symbol { get; }
+    public string Display { get; }
+    public IBrush Brush { get; }
+
+    public bool IsCaution => Level is NoteLevel.Caution or NoteLevel.Danger;
+    public bool IsCautionOnly => Level == NoteLevel.Caution;
+    public bool IsDanger => Level == NoteLevel.Danger;
+    public bool IsInfo => Level == NoteLevel.Info;
+}
+
+/// <summary>
+/// 一个文件槽位。只描述“这个文件是什么”，不判断用户该不该继续 ——
+/// 唯一能让按钮变灰的是 Blocked（文件里没有视频流 / 没有可 copy 的音频流）。
+/// </summary>
+public sealed class SlotViewModel : ObservableObject
+{
+    private static readonly string[] VideoFormats = ["MP4", "MOV", "MKV", "M4V"];
+    private static readonly string[] AudioFormats = ["CAF", "WAV", "FLAC", "MP3"];
+
+    private string _fileName = "";
+    private string _filePath = "";
+    private string _fileSizeText = "";
+    private string _specLine = "";
+    private string _secondaryLine = "";
+    private bool _hasFile;
+    private SlotStatus _status = SlotStatus.Empty;
+    private string? _blockReason;
+
+    public SlotViewModel(
+        string title,
+        string emptyTitle,
+        string emptyHint,
+        string pickerTitle,
+        string step,
+        string role,
+        bool isVideo)
+    {
+        Title = title;
+        EmptyTitle = emptyTitle;
+        EmptyHint = emptyHint;
+        PickerTitle = pickerTitle;
+        Step = step;
+        Role = role;
+        IsVideo = isVideo;
+        IsAudio = !isVideo;
+        FormatChips = isVideo ? VideoFormats : AudioFormats;
+    }
+
+    public string Title { get; }
+
+    /// <summary>卡片左上角的序号，例如 “01”。纯视觉引导，不参与业务判断。</summary>
+    public string Step { get; }
+
+    /// <summary>卡片角色，例如 “源视频” / “你的音频”。</summary>
+    public string Role { get; }
+
+    public bool IsVideo { get; }
+    public bool IsAudio { get; }
+    public string PickerTitle { get; }
+
+    /// <summary>空状态里的主提示，例如“把视频拖到这里”。</summary>
+    public string EmptyTitle { get; }
+
+    /// <summary>空状态里的副提示，用一句人话解释这个槽位会做什么。</summary>
+    public string EmptyHint { get; }
+
+    /// <summary>空状态里展示的支持格式 chips。</summary>
+    public IReadOnlyList<string> FormatChips { get; }
+
+    /// <summary>卡片内的备注区。内容本身在“提醒”弹窗里显示，卡片不再展开。</summary>
+    public ObservableCollection<NoteViewModel> Notes { get; } = new();
+
+    /// <summary>已选文件的规格 chips，例如 1920×1080 / 24fps / H.264 / 4:12。</summary>
+    public ObservableCollection<string> SpecChips { get; } = new();
+
+    public string FileName { get => _fileName; set => Set(ref _fileName, value); }
+
+    /// <summary>完整路径，仅用于 Tooltip；界面上不显示，避免把卡片撑开。</summary>
+    public string FilePath { get => _filePath; set => Set(ref _filePath, value); }
+
+    public string FileSizeText
+    {
+        get => _fileSizeText;
+        set
+        {
+            if (!Set(ref _fileSizeText, value)) return;
+            Raise(nameof(HasFileSize));
+        }
+    }
+
+    public bool HasFileSize => !string.IsNullOrWhiteSpace(FileSizeText);
+
+    /// <summary>规格行：等宽字体显示，用户核对 DAW 导出设置就看这一行。</summary>
+    public string SpecLine { get => _specLine; set => Set(ref _specLine, value); }
+
+    /// <summary>补充行：源音轨信息（视频）或多音轨提示（音频）。</summary>
+    public string SecondaryLine
+    {
+        get => _secondaryLine;
+        set
+        {
+            if (!Set(ref _secondaryLine, value)) return;
+            Raise(nameof(HasSecondaryLine));
+        }
+    }
+
+    public bool HasSecondaryLine => !string.IsNullOrWhiteSpace(SecondaryLine);
+
+    /// <summary>
+    /// 卡片底部那一行“说明/提醒”的入口文案。提醒内容本身在弹窗里显示，
+    /// 不在卡片内展开 —— 展开会把卡片撑高，进而把整个窗口的布局挤变形。
+    /// </summary>
+    public string NoticeText { get; private set; } = "";
+    public bool HasNotices => Notes.Count > 0;
+    public bool HasCautionNotices { get; private set; }
+    public IBrush NoticeBrush => HasCautionNotices ? Palette.Warn : Palette.Faint;
+
+    /// <summary>备注列表变化后刷新上面的派生属性。</summary>
+    public void RefreshNoticeSummary()
+    {
+        HasCautionNotices = Notes.Any(n => n.IsCaution);
+        NoticeText = !HasNotices
+            ? ""
+            : HasCautionNotices
+                ? $"⚠ {Notes.Count} 条需要注意 · 查看"
+                : $"{Notes.Count} 条说明 · 查看";
+
+        Raise(nameof(NoticeText));
+        Raise(nameof(HasNotices));
+        Raise(nameof(HasCautionNotices));
+        Raise(nameof(NoticeBrush));
+        RaiseStatusPill();
+    }
+
+    public bool HasFile
+    {
+        get => _hasFile;
+        set
+        {
+            if (!Set(ref _hasFile, value)) return;
+            Raise(nameof(IsEmpty));
+            Raise(nameof(PickButtonText));
+            Raise(nameof(HasStatusPill));
+            RaiseStatusPill();
+        }
+    }
+
+    public bool IsEmpty => !HasFile;
+
+    /// <summary>有文件之后按钮文案变成“更换视频 / 更换音频”，避免用户以为要再选一次。</summary>
+    public string PickButtonText =>
+        HasFile
+            ? (IsVideo ? "更换视频" : "更换音频")
+            : (IsVideo ? "选择视频" : "选择音频");
+
+    public SlotStatus Status
+    {
+        get => _status;
+        set
+        {
+            if (!Set(ref _status, value)) return;
+            Raise(nameof(HasBlockReason));
+            Raise(nameof(IsReady));
+            Raise(nameof(IsBlocked));
+            Raise(nameof(IsReadyClean));
+            RaiseStatusPill();
+        }
+    }
+
+    public bool IsReady => Status == SlotStatus.Ready;
+    public bool IsBlocked => Status == SlotStatus.Blocked;
+
+    /// <summary>就绪且没有提醒。用于状态胶囊的绿色对勾。</summary>
+    public bool IsReadyClean => IsReady && !HasCautionNotices;
+
+    public string? BlockReason
+    {
+        get => _blockReason;
+        set
+        {
+            if (!Set(ref _blockReason, value)) return;
+            Raise(nameof(HasBlockReason));
+        }
+    }
+
+    public bool HasBlockReason => Status == SlotStatus.Blocked && !string.IsNullOrEmpty(BlockReason);
+
+    // ── 状态胶囊 ──
+    public bool HasStatusPill => HasFile;
+
+    public string StatusPillText
+    {
+        get
+        {
+            if (!HasFile) return "";
+            if (IsBlocked) return "无法处理";
+            return HasCautionNotices ? "有提醒" : "已就绪";
+        }
+    }
+
+    public IBrush StatusPillBackground =>
+        IsBlocked ? Palette.PillBlockedBackground
+        : HasCautionNotices ? Palette.PillWarnBackground
+        : Palette.PillReadyBackground;
+
+    public IBrush StatusPillBorder =>
+        IsBlocked ? Palette.PillBlockedBorder
+        : HasCautionNotices ? Palette.PillWarnBorder
+        : Palette.PillReadyBorder;
+
+    public IBrush StatusPillForeground =>
+        IsBlocked ? Palette.PillBlockedForeground
+        : HasCautionNotices ? Palette.PillWarnForeground
+        : Palette.PillReadyForeground;
+
+    private void RaiseStatusPill()
+    {
+        Raise(nameof(HasStatusPill));
+        Raise(nameof(StatusPillText));
+        Raise(nameof(StatusPillBackground));
+        Raise(nameof(StatusPillBorder));
+        Raise(nameof(StatusPillForeground));
+        Raise(nameof(IsReadyClean));
+    }
+
+    public void Clear()
+    {
+        FileName = "";
+        FilePath = "";
+        FileSizeText = "";
+        SpecLine = "";
+        SecondaryLine = "";
+        BlockReason = null;
+        Status = SlotStatus.Empty;
+        Notes.Clear();
+        SpecChips.Clear();
+        HasFile = false;
+        RefreshNoticeSummary();
+    }
+}

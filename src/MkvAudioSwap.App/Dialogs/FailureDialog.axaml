@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MkvAudioSwap.App.Dialogs.FailureDialog"
+        Title="处理失败"
+        Icon="/Assets/app.png"
+        Width="640" SizeToContent="Height" MaxHeight="620"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+  <StackPanel Margin="26,24,26,22" Spacing="14">
+
+    <!-- 标题 -->
+    <Grid ColumnDefinitions="Auto,*">
+      <Border Width="40" Height="40" CornerRadius="20"
+              Background="{StaticResource DangerSoftBrush}" VerticalAlignment="Center">
+        <Path Data="{StaticResource IconBlocked}" Stroke="{StaticResource DangerBrush}"
+              StrokeThickness="1.9" StrokeLineCap="Round" StrokeJoin="Round"
+              Stretch="Uniform" Width="19" Height="19"
+              HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0" VerticalAlignment="Center">
+        <TextBlock Name="TitleText" Classes="dialogTitle" />
+        <TextBlock Text="把下面这段详情发给开发者，是定位问题最快的路径。"
+                   Classes="dialogSubtitle" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 人话建议 -->
+    <Border Classes="dangerCard">
+      <Grid ColumnDefinitions="Auto,*">
+        <Path Data="{StaticResource IconInfo}" Stroke="{StaticResource DangerTextBrush}"
+              StrokeThickness="1.6" Stretch="Uniform" Width="14" Height="14"
+              VerticalAlignment="Top" Margin="0,1,0,0" />
+        <TextBlock Grid.Column="1" Margin="8,0,0,0" Name="AdviceText" TextWrapping="Wrap"
+                   FontSize="12" Foreground="{StaticResource DangerTextBrush}" LineHeight="19" />
+      </Grid>
+    </Border>
+
+    <!-- 细节 -->
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="命令行与 ffmpeg 输出" Classes="eyebrow" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Name="CopyDetailsButton" Classes="link" Content="复制详情"
+                Click="OnCopy" FontSize="11" />
+      </Grid>
+      <TextBox Name="DetailsBox" IsReadOnly="True" AcceptsReturn="True"
+               TextWrapping="Wrap" Height="180"
+               FontFamily="{StaticResource MonoFont}" FontSize="10.5"
+               Background="{StaticResource SurfaceBrush}"
+               BorderBrush="{StaticResource BorderBrush}"
+               CornerRadius="10" Padding="12,10" />
+    </StackPanel>
+
+    <!-- 操作 -->
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="详情只包含本次的命令行与 ffmpeg 输出，不包含音频内容。"
+                 FontSize="10.5" Foreground="{StaticResource MutedBrush}"
+                 VerticalAlignment="Center" TextWrapping="Wrap" />
+      <Button Grid.Column="1" Classes="primary compact" Content="关闭" Click="OnClose"
+              Margin="12,0,0,0" />
+    </Grid>
+  </StackPanel>
+</Window>

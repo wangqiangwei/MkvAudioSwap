@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- 发布包不携带调试符号：避免把构建机的本地源码路径（E:\...）带进公开分发。 -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+    <AssemblyName>MkvAudioSwap.Core</AssemblyName>
+    <RootNamespace>MkvAudioSwap.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 测试需要触达 OutputNaming.PreviewFolderOverride，用来把预览目录指向临时目录，
+         否则测试会真的去删系统临时目录里的预览文件。 -->
+    <InternalsVisibleTo Include="MkvAudioSwap.Tests" />
+  </ItemGroup>
+
+</Project>

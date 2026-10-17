@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:MkvAudioSwap.App.Controls"
+        x:Class="MkvAudioSwap.App.Dialogs.OffsetDialog"
+        Title="音频偏移"
+        Icon="/Assets/app.png"
+        Width="620" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+  <StackPanel Margin="26,22,26,22" Spacing="14">
+
+    <!-- 标题 -->
+    <Grid ColumnDefinitions="Auto,*">
+      <Border Classes="sectionTile">
+        <Path Data="{StaticResource IconSliders}" Stroke="{StaticResource AccentBrush}"
+              StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+              Stretch="Uniform" Width="16" Height="16"
+              HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <StackPanel Grid.Column="1" Spacing="2" Margin="11,0,0,0" VerticalAlignment="Center">
+        <TextBlock Text="音频偏移" Classes="dialogTitle" />
+        <TextBlock Text="只有导出的音频整体比视频早或晚了一点点时才需要设置。"
+                   Classes="dialogSubtitle" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 输入 -->
+    <Border Classes="dialogCard">
+      <StackPanel Spacing="12">
+
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+          <TextBlock Text="偏移量" Classes="sectionLabel" VerticalAlignment="Center"
+                     Margin="0,0,10,0" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBox Name="OffsetBox" Width="150" Height="44"
+                     HorizontalContentAlignment="Right" VerticalContentAlignment="Center"
+                     Padding="12,6" FontSize="20" FontWeight="SemiBold"
+                     FontFamily="{StaticResource MonoFont}"
+                     PlaceholderText="0" TextChanged="OnOffsetChanged" />
+            <TextBlock Text="毫秒" FontSize="13" Foreground="{StaticResource MutedBrush}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                      VerticalAlignment="Center" Margin="20,0,0,0">
+            <TextBlock Text="=" FontSize="13" Foreground="{StaticResource FaintBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Name="SecondsValue" FontSize="18" FontWeight="SemiBold"
+                       FontFamily="{StaticResource MonoFont}"
+                       Foreground="{StaticResource SuccessTextBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="秒" FontSize="13" Foreground="{StaticResource MutedBrush}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+
+          <Button Grid.Column="3" Name="ZeroButton" Classes="ghost compact" Content="归零"
+                  Click="OnZero" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- 快捷增减：点一次在当前值上累加/累减，而不是把值设成按钮上的数字。
+             这样连续点 +100 就能从 -300 一路调到 -100、0、+100… -->
+        <StackPanel Spacing="6">
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Text="快捷增减" Classes="eyebrow" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="点一次，在当前值上累加/累减；归零用右上角"
+                       FontSize="10.5" Foreground="{StaticResource FaintBrush}"
+                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+          </Grid>
+          <WrapPanel Orientation="Horizontal">
+            <Button Classes="preset" Content="-500" Tag="-500" Click="OnPreset" Margin="0,0,6,6" />
+            <Button Classes="preset" Content="-300" Tag="-300" Click="OnPreset" Margin="0,0,6,6" />
+            <Button Classes="preset" Content="-100" Tag="-100" Click="OnPreset" Margin="0,0,6,6" />
+            <Button Classes="preset" Content="+100" Tag="100" Click="OnPreset" Margin="14,0,6,6" />
+            <Button Classes="preset" Content="+300" Tag="300" Click="OnPreset" Margin="0,0,6,6" />
+            <Button Classes="preset" Content="+500" Tag="500" Click="OnPreset" Margin="0,0,6,6" />
+          </WrapPanel>
+        </StackPanel>
+
+        <!-- 方向解释 -->
+        <Grid ColumnDefinitions="*,*">
+          <Border Grid.Column="0" Background="{StaticResource AccentSoftBrush}"
+                  CornerRadius="8" Padding="11,8" Margin="0,0,5,0">
+            <StackPanel Spacing="2">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Path Data="{StaticResource IconArrowRight}" Stroke="{StaticResource SuccessTextBrush}"
+                      StrokeThickness="1.5" Stretch="Uniform" Width="12" Height="12"
+                      VerticalAlignment="Center" />
+                <TextBlock Text="正值" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{StaticResource SuccessTextBrush}" />
+              </StackPanel>
+              <TextBlock Text="音频晚出现（往后推）" FontSize="11"
+                         Foreground="{StaticResource SuccessTextBrush}" />
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="1" Background="{StaticResource WarnSoftBrush}"
+                  CornerRadius="8" Padding="11,8" Margin="5,0,0,0">
+            <StackPanel Spacing="2">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Path Data="{StaticResource IconArrowRight}" Stroke="{StaticResource WarnTextBrush}"
+                      StrokeThickness="1.5" Stretch="Uniform" Width="12" Height="12"
+                      RenderTransform="scale(-1,1)" VerticalAlignment="Center" />
+                <TextBlock Text="负值" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{StaticResource WarnTextBrush}" />
+              </StackPanel>
+              <TextBlock Text="音频早出现（往前提）" FontSize="11"
+                         Foreground="{StaticResource WarnTextBrush}" />
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- 方向示意：输入时实时移动音频条 -->
+        <Border Name="TimelineCard" Classes="infoCard">
+          <StackPanel Spacing="5">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="方向示意" Classes="eyebrow" />
+              <TextBlock Name="DurationContext" Grid.Column="1" Classes="faint" FontSize="10.5" />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Text="画面" Classes="timelineLabel" Margin="0,0,8,0" />
+              <controls:DurationTimeline Grid.Column="1" Name="OffsetTimeline" Height="24"
+                                         VideoBrush="{StaticResource AccentBrush}"
+                                         AudioBrush="{StaticResource WarnBrush}" />
+              <TextBlock Grid.Column="2" Text="音频" Classes="timelineLabel" Margin="8,0,0,0" />
+            </Grid>
+            <TextBlock Text="负值会让音频条向左移动；预览里听到的就是这个位置。"
+                       Classes="faint" FontSize="10.5" />
+          </StackPanel>
+        </Border>
+
+        <!-- 示例 -->
+        <Border Classes="infoCard">
+          <StackPanel Spacing="3">
+            <TextBlock Text="怎么填" Classes="eyebrow" />
+            <TextBlock Text="导出时前面多了 0.3 秒静音 → 填 -300（也就是 -0.3 秒）"
+                       FontSize="11.5" Foreground="{StaticResource SpecBrush}" TextWrapping="Wrap" />
+            <TextBlock Text="发现人声比画面快了 0.5 秒 → 填 +500（也就是 +0.5 秒）"
+                       FontSize="11.5" Foreground="{StaticResource SpecBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Border>
+
+    <!-- 两条必须说清楚的前提 -->
+    <Border Classes="warnCard">
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="Auto,*">
+          <Path Data="{StaticResource IconWarning}" Stroke="{StaticResource WarnTextBrush}"
+                StrokeThickness="1.6" Stretch="Uniform" Width="14" Height="14"
+                VerticalAlignment="Top" Margin="0,1,0,0" />
+          <TextBlock Grid.Column="1" Margin="8,0,0,0" TextWrapping="Wrap" FontSize="11"
+                     Foreground="{StaticResource WarnTextBrush}" LineHeight="17"
+                     Text="如果是在 DAW 里裁过片段导致对不上，请重新导出完整长度，不要用偏移硬凑。" />
+        </Grid>
+        <Border Height="1" Background="{StaticResource WarnSoftBorderBrush}" />
+        <Grid ColumnDefinitions="Auto,*">
+          <Path Data="{StaticResource IconInfo}" Stroke="{StaticResource WarnTextBrush}"
+                StrokeThickness="1.6" Stretch="Uniform" Width="14" Height="14"
+                VerticalAlignment="Top" Margin="0,1,0,0" />
+          <TextBlock Grid.Column="1" Margin="8,0,0,0" TextWrapping="Wrap" FontSize="11"
+                     Foreground="{StaticResource WarnTextBrush}" LineHeight="17"
+                     Text="程序只比对时长，不比对内容。两段时长完全一致的音频，一个从第 0 秒对齐、一个从第 0.5 秒开始，程序都会说“时长一致”。" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- 预览进度 / 结果 -->
+    <StackPanel Spacing="6">
+      <ProgressBar Name="PreviewProgress" IsIndeterminate="True" IsVisible="False" Height="4" />
+      <TextBlock Name="PreviewStatus" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                 TextWrapping="Wrap" IsVisible="False" />
+    </StackPanel>
+
+    <!-- 操作 -->
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,2,0,0">
+      <Button Grid.Column="0" Name="PreviewButton" Classes="ghost compact"
+              Content="预览前 10 秒" Click="OnPreview" />
+      <Button Grid.Column="2" Classes="ghost compact" Content="取消" Click="OnCancel"
+              Margin="0,0,10,0" />
+      <Button Grid.Column="3" Name="OkButton" Classes="primary compact" Content="确定" Click="OnOk" />
+    </Grid>
+
+    <Grid ColumnDefinitions="Auto,*">
+      <Path Data="{StaticResource IconInfo}" Stroke="{StaticResource FaintBrush}"
+            StrokeThickness="1.5" Stretch="Uniform" Width="11" Height="11"
+            VerticalAlignment="Top" Margin="0,2,0,0" />
+      <TextBlock Grid.Column="1" Margin="6,0,0,0"
+                 Text="预览会重新编码成一个低清小文件并自动播放，只用于检查对齐，不是最终输出。"
+                 FontSize="10.5" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap" />
+    </Grid>
+  </StackPanel>
+</Window>

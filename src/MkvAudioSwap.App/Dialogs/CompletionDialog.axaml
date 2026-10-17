@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MkvAudioSwap.App.Dialogs.CompletionDialog"
+        Title="完成"
+        Icon="/Assets/app.png"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+  <StackPanel Margin="26,24,26,22" Spacing="16">
+
+    <!-- 标题区 -->
+    <StackPanel Orientation="Horizontal" Spacing="13">
+      <Border Name="SuccessBadge" Width="44" Height="44" CornerRadius="22"
+              Background="{StaticResource AccentSoftBrush}" VerticalAlignment="Center">
+        <Path Data="{StaticResource IconCheck}" Stroke="{StaticResource AccentBrush}"
+              StrokeThickness="2.1" StrokeLineCap="Round" StrokeJoin="Round"
+              Stretch="Uniform" Width="21" Height="21"
+              HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <StackPanel VerticalAlignment="Center" Spacing="2">
+        <TextBlock Text="替换完成" Classes="dialogTitle" />
+        <TextBlock Name="DetailText" FontSize="11.5" Foreground="{StaticResource MutedBrush}" />
+      </StackPanel>
+    </StackPanel>
+
+    <!-- 输出路径 -->
+    <Border Classes="dialogCard">
+      <StackPanel Spacing="7">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="输出文件" Classes="eyebrow" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Name="CopyPathButton" Classes="link" Content="复制路径"
+                  Click="OnCopy" FontSize="10.5" Padding="6,2" />
+        </Grid>
+        <SelectableTextBlock Name="PathText" FontFamily="{StaticResource MonoFont}"
+                             FontSize="11.5" Foreground="{StaticResource TextBrush}"
+                             TextWrapping="Wrap" LineHeight="17" />
+      </StackPanel>
+    </Border>
+
+    <!-- 说明 -->
+    <StackPanel Orientation="Horizontal" Spacing="7">
+      <Path Data="{StaticResource IconShield}" Stroke="{StaticResource SuccessBrush}"
+            StrokeThickness="1.5" Stretch="Uniform" Width="13" Height="13"
+            VerticalAlignment="Center" />
+      <TextBlock Text="画面与声音都是原样拷贝进新容器的，没有经过任何重新编码。"
+                 FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- 操作 -->
+    <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+      <Button Grid.Column="0" Name="RevealButton" Classes="primary compact"
+              Content="打开所在文件夹" Click="OnReveal" />
+      <Button Grid.Column="1" Name="PlayButton" Classes="ghost compact" Content="播放"
+              Click="OnPlay" Margin="8,0,0,0" />
+      <Button Grid.Column="4" Name="AgainButton" Classes="ghost compact" Content="再处理一个"
+              Click="OnAgain" VerticalAlignment="Center" />
+    </Grid>
+  </StackPanel>
+</Window>
